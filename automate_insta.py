@@ -16,26 +16,27 @@ IMAGE_PATH = "post.jpg"
 async def capture_screenshot():
     print(f"Generando captura de pantalla desde {HTML_FILE_PATH}...")
     async with async_playwright() as p:
-        # Iniciamos el navegador (headless para que no se abra la ventana)
+        # Iniciamos el navegador
         browser = await p.chromium.launch()
-        # Creamos una página con el tamaño exacto de Instagram (1080x1080)
+        # Viewport de referencia (Instagram standard)
         page = await browser.new_page(viewport={'width': 1080, 'height': 1080})
         
         # Cargamos el archivo local
         await page.goto(f"file://{HTML_FILE_PATH}")
         
-        # Esperamos un momento para que las animaciones (fade-in) terminen
-        # y las estrellas se generen
+        # Esperamos a que las animaciones y el contenido carguen
         await asyncio.sleep(3) 
         
-        # Tomamos la captura de la pantalla completa (que es 1080x1080)
-        await page.screenshot(path=IMAGE_PATH, quality=95)
-        print(f"¡Imagen guardada como {IMAGE_PATH}!")
+        # Seleccionamos el elemento central (#app) para la captura focalizada
+        # Esto capturará la tarjeta con la frase en formato rectangular
+        app_element = page.locator("#app")
+        await app_element.screenshot(path=IMAGE_PATH, quality=95)
         
+        print(f"¡Imagen focalizada guardada como {IMAGE_PATH}!")
         await browser.close()
 
 def upload_to_instagram():
-    # Obtenemos las credenciales de las variables de entorno por seguridad
+    # Obtenemos las credenciales
     username = os.environ.get("INSTA_USERNAME")
     password = os.environ.get("INSTA_PASSWORD")
 
@@ -47,10 +48,8 @@ def upload_to_instagram():
     cl = Client()
     
     try:
-        # Intentamos cargar una sesión previa para evitar bloqueos
         if os.path.exists("session.json"):
             cl.load_settings("session.json")
-            print("Sesión previa cargada.")
         
         cl.login(username, password)
         cl.dump_settings("session.json")
@@ -65,6 +64,11 @@ def upload_to_instagram():
         media = cl.photo_upload(IMAGE_PATH, caption)
         print(f"¡Publicado con éxito! Media ID: {media.pk}")
 
+        # --- RESTAURADO: Borrar la foto tras publicar con éxito ---
+        if os.path.exists(IMAGE_PATH):
+            os.remove(IMAGE_PATH)
+            print(f"Archivo temporal {IMAGE_PATH} eliminado.")
+
     except Exception as e:
         print(f"Error durante la publicación: {e}")
 
@@ -73,11 +77,11 @@ async def main():
     await capture_screenshot()
     
     # 2. Subir a Instagram
-    # Solo intentamos subir si estamos seguros de que hay credenciales
     if os.environ.get("INSTA_USERNAME"):
         upload_to_instagram()
     else:
-        print("Aviso: No se detectaron credenciales. La imagen se generó pero no se subió.")
+        print("Aviso: No se detectaron credenciales. La imagen se generó pero no se subió (puedes revisarla en post.jpg).")
+        # En este caso no la borramos para que el usuario pueda verla
 
 if __name__ == "__main__":
     asyncio.run(main())
