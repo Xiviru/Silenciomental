@@ -7,7 +7,7 @@ from datetime import datetime
 
 # --- CONFIGURACIÓN ---
 # Estos hashtags se añadirán automáticamente a cada post
-HASHTAGS = "#frases #mistico #motivacion #universo #paz #dailyquote #espiritualidad"
+HASHTAGS = "#frases #reflexión #motivacion #universo #paz #dailyquote #espiritualidad"
 
 # Ruta local al archivo index.html (se ajusta automáticamente si estamos en GitHub Actions)
 HTML_FILE_PATH = os.path.abspath("index.html")
@@ -58,7 +58,7 @@ def upload_to_instagram():
 
         # Preparamos el pie de foto
         date_str = datetime.now().strftime("%d/%m/%Y")
-        caption = f"Tu mensaje místico de hoy ({date_str})\n.\n.\n{HASHTAGS}"
+        caption = f"Tu reflexión de hoy ({date_str})\n.\n.\n{HASHTAGS}"
 
         # Subimos la foto
         print("Subiendo foto a Instagram...")
